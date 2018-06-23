@@ -16,11 +16,11 @@ def getNotesByNotebookGuid(noteStore,notebookGuid):
 	f = NoteStore.NoteFilter()
 	f.notebookGuid = notebookGuid
 	return noteStore.findNotes(f, 0, 999).notes
-#从笔记本列表中按名查找笔记本的guid
-def getGuidByNotebookName(notebookName,notebooksList):
+#按名查找笔记本
+def findNotebookByName(notebooksList,notebookName):
 	for notebook in notebooksList:
 		if notebook.name == notebookName:
-			return notebook.guid
+			return notebook
 #将传入的笔记本列表中的对象在账户中创建
 def createAllNotebooks(noteStore,notebooksList):
 	for notebook in notebooksList:
@@ -34,6 +34,17 @@ def createAllNotebooks(noteStore,notebooksList):
 			pass
 		finally:
 			pass
+#设置笔记本的笔记本组
+def setNotebookStack(source_notebooksList, dest_notebooksList):
+	for source_notebook in source_notebooksList:
+		if source_notebook.stack == None:
+			continue
+		dest_notebook = findNotebookByName(dest_notebooksList, source_notebook.name)
+		dest_notebook.stack = source_notebook.stack
+#将设置笔记本组后的笔记本对象在账户中进行更新
+def updateNotebooks(noteStore, notebooksList):
+	for notebook in notebooksList:
+		noteStore.updateNotebook(notebook)
 #按名查找标签
 def findTagByName(tagsList,tagName):
 	for tag in tagsList:
@@ -44,18 +55,6 @@ def findTagByGuid(tagsList,tagGuid):
 	for tag in tagsList:
 		if tag.guid == tagGuid:
 			return tag
-#设置标签的上下级关系
-def setParentTag(source_tagsList,dest_tagsList):
-	for source_tag in source_tagsList:
-		if source_tag.parentGuid == None:
-			continue
-		dest_tag = findTagByName(dest_tagsList, source_tag.name)
-		parentTag = findTagByName(dest_tagsList, findTagByGuid(source_tagsList, source_tag.parentGuid).name)
-		dest_tag.parentGuid = parentTag.guid
-#将更新上下级关系后的标签对象在账户中进行更新
-def updateTags(noteStore,tagsList):
-	for tag in tagsList:
-		noteStore.updateTag(tag)
 #将传入的标签列表的对象在账户中进行创建
 def createAllTags(noteStore,tagsList):
 	for tag in tagsList:
@@ -70,6 +69,18 @@ def createAllTags(noteStore,tagsList):
 			pass
 		finally:
 			pass
+#设置标签的上下级关系
+def setParentTag(source_tagsList,dest_tagsList):
+	for source_tag in source_tagsList:
+		if source_tag.parentGuid == None:
+			continue
+		dest_tag = findTagByName(dest_tagsList, source_tag.name)
+		parentTag = findTagByName(dest_tagsList, findTagByGuid(source_tagsList, source_tag.parentGuid).name)
+		dest_tag.parentGuid = parentTag.guid
+#将更新上下级关系后的标签对象在账户中进行更新
+def updateTags(noteStore,tagsList):
+	for tag in tagsList:
+		noteStore.updateTag(tag)
 #获取包括资源等信息的完整笔记
 def getFullNote(noteStore,noteGuid):
 	return noteStore.getNote(noteGuid, True, True, True, True)
@@ -85,7 +96,7 @@ def copyAllNotes(source_noteStore,dest_noteStore,source_notebooksList,dest_noteb
 			print '    copying note ' + note.title
 			newNote = getFullNote(source_noteStore, note.guid)
 			newNote.guid = None
-			newNote.notebookGuid = getGuidByNotebookName(notebook.name, dest_notebooksList)
+			newNote.notebookGuid = findNotebookByName(dest_notebooksList, notebook.name).guid
 			if newNote.tagGuids != None:
 				for i in range(len(newNote.tagGuids)):
 					tagGuid = newNote.tagGuids[i]
@@ -101,7 +112,7 @@ dest_client = EvernoteClient(token=dest_dev_token,sandbox=False,china=False)
 dest_userStore = dest_client.get_user_store()
 dest_user = dest_userStore.getUser()
 dest_noteStore = dest_client.get_note_store()
-#读取源账户的笔记本列表，并在目标账户中创建相同的笔记本
+#读取源账户的笔记本列表，并在目标账户中创建相同的笔记本，再更新笔记本的笔记本组
 source_notebooksList = source_noteStore.listNotebooks()
 createAllNotebooks(dest_noteStore, source_notebooksList)
 dest_notebooksList = dest_noteStore.listNotebooks() 
