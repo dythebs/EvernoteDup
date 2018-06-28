@@ -115,7 +115,9 @@ dest_noteStore = dest_client.get_note_store()
 #读取源账户的笔记本列表，并在目标账户中创建相同的笔记本，再更新笔记本的笔记本组
 source_notebooksList = source_noteStore.listNotebooks()
 createAllNotebooks(dest_noteStore, source_notebooksList)
-dest_notebooksList = dest_noteStore.listNotebooks() 
+dest_notebooksList = dest_noteStore.listNotebooks()
+setNotebookStack(source_notebooksList, dest_notebooksList)
+updateNotebooks(dest_noteStore, dest_notebooksList)
 #读取源账户的标签列表，在目标账户中创建相同的标签，再更新标签的上下级关系
 source_tagsList = source_noteStore.listTags()
 createAllTags(dest_noteStore, source_tagsList)
